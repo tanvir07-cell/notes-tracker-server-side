@@ -1,7 +1,7 @@
 const express = require("express");
 const app = express();
 const cors = require("cors");
-const { MongoClient, ServerApiVersion } = require("mongodb");
+const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 const port = process.env.PORT || 5000;
 
 // for .env file(eita nah dile bad auth error dekahbe):
@@ -25,14 +25,17 @@ async function run() {
     const notesCollection = client.db("noteTrackers").collection("notes");
 
     //   get data :
+    // get api : localhost:5000/notes
     app.get("/notes", async (req, res) => {
-      const query = {};
+      const query = req.query;
       const cursor = notesCollection.find(query);
       const result = await cursor.toArray();
       res.send(result);
+      console.log(query);
     });
 
     // Post data:
+    // post api : localhost:5000/note
     app.post("/note", async (req, res) => {
       const post = req.body;
 
@@ -41,6 +44,34 @@ async function run() {
 
       //   console.log(req.body);
       //   res.send("Hello from the post api");
+    });
+
+    // update data:
+    app.put("/note/:id", async (req, res) => {
+      const id = req.params.id;
+      const body = req.body;
+      const filter = { _id: ObjectId(id) };
+      const options = { upsert: true };
+      const updateDoc = {
+        $set: {
+          name: body.name,
+          Age: body.Age,
+        },
+      };
+      const result = await notesCollection.updateOne(
+        filter,
+        updateDoc,
+        options
+      );
+      res.send(result);
+    });
+
+    // delete data:
+    app.delete("/note/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: ObjectId(id) };
+      const result = await notesCollection.deleteOne(query);
+      res.send(result);
     });
   } finally {
   }
